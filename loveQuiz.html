@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Love Quiz ❤️</title>
+    <style>
+        :root {
+            --primary-pink: #ff4d6d;
+            --secondary-pink: #ff758f;
+            --bg-color: #fff0f3;
+            --text-color: #590d22;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Floating Hearts Background */
+        .hearts-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .heart {
+            position: absolute;
+            color: var(--primary-pink);
+            opacity: 0.5;
+            animation: float 6s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+
+        #quiz-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(255, 77, 109, 0.2);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            transition: all 0.4s ease;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-pink);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #ffe5ec;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        #progress {
+            height: 100%;
+            background: var(--primary-pink);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #ffb3c1;
+            padding: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            color: var(--text-color);
+        }
+
+        .option-btn:hover {
+            background: #fff0f3;
+            border-color: var(--primary-pink);
+            transform: translateY(-2px);
+        }
+
+        .option-btn.correct {
+            background: #c7f9cc;
+            border-color: #57cc99;
+        }
+
+        .option-btn.wrong {
+            background: #ffd6d6;
+            border-color: #ff4d4d;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #score-screen h2 {
+            font-size: 2.5rem;
+            margin: 1rem 0;
+        }
+
+        .heart-big {
+            font-size: 5rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .btn-restart {
+            margin-top: 2rem;
+            background: var(--primary-pink);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 77, 109, 0.3);
+        }
+
+        .btn-restart:hover {
+            background: var(--secondary-pink);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hearts-container" id="hearts"></div>
+
+    <div id="quiz-container">
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <div class="heart-big">💝💍😘</div>
+            <h1>Abbie and Chan</h1>
+            <h1>Love Quiz!!</h1>
+            <p style="margin-bottom: 2rem;">It's Time to Level Up!!</p>
+            <button class="btn-restart" onclick="startQuiz()">Start the Quiz!</button>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="question-screen" class="hidden">
+            <div class="progress-bar"><div id="progress"></div></div>
+            <div id="question-count" style="margin-bottom: 0.5rem; font-size: 0.9rem; opacity: 0.7;">Question 1 of 5</div>
+            <div class="question-text" id="question-text">Loading question...</div>
+            <div class="options-grid" id="options">
+                <!-- Options will be generated here -->
+            </div>
+        </div>
+
+        <!-- Score Screen -->
+        <div id="score-screen" class="hidden">
+            <div class="heart-big">💖</div>
+            <h1>Quiz Complete!</h1>
+            <div id="score-text" style="font-size: 1.2rem;">You got 0 out of 5!</div>
+            <h2 id="verdict">Perfect Match!</h2>
+            <p id="personal-message">I love you more than words can say!</p>
+            <button class="btn-restart" onclick="resetQuiz()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        // --- QUIZ DATA ---
+        // Edit these questions to match your relationship!
+        const quizData = [
+            {
+                question: "Where was our very first date?",
+                options: ["Stars and Strikes", "Sonic", "Mount Tasia", "Sparkles"],
+                correct: 1 // Index of the correct answer (0-based)
+            },
+            {
+                question: "How did we mainly stay in contact during long distance?",
+                options: ["Meet In Person", "Text", " Phone Call", "FaceTime"],
+                correct: 3
+            },
+            {
+                question: "How long have we been together?",
+                options: ["4 Years", "6 Years", "9 Years", "8 Years"],
+                correct: 2
+            },
+            {
+                question: "Where did we go when you first visited me at Georgia State?",
+                options: ["Centennial Olympic Park", "Six Flags", "SkyView Atlanta (Farris Wheel)", "Piedmont Park"],
+                correct: 2
+            },
+            {
+                question: "What state were we first out of Georgia together in?",
+                options: ["Alabama", "Tennessee", "Florida", "South Carolina"],
+                correct: 0
+            },
+            {
+                question: "Where did we first look at rings at?",
+                options: ["Cumberland Diamond Exchange", "Antwerp Diamonds", "Worthmore Jewelers", "Brilliant Earth"],
+                correct: 1
+            },
+            {
+                question: "Where have we not been together?",
+                options: ["Las Vegas", "New York", "Tampa", "Los Angeles"],
+                correct: 2
+            },
+            {
+                question: "What year did we add Rory to our family?",
+                options: ["2022", "2021", "2024", "2023"],
+                correct: 3
+            },
+            {
+                question: "What did I lose in the Ocean?",
+                options: ["Keys", "Sunglasses", "Camera", "Shoes"],
+                correct: 2
+            },
+            {
+                question: "What do I love the most?",
+                options: ["Abbie", "Pokemon", "Atlanta Hawks", "StarWars"],
+                correct: 0
+            }
+
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let canAnswer = true;
+
+        // --- CORE FUNCTIONS ---
+
+        function startQuiz() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('question-screen').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            canAnswer = true;
+            const data = quizData[currentQuestion];
+            
+            // Update Progress
+            const progressPercent = (currentQuestion / quizData.length) * 100;
+            document.getElementById('progress').style.width = progressPercent + "%";
+            document.getElementById('question-count').innerText = `Question ${currentQuestion + 1} of ${quizData.length}`;
+            
+            // Set Text
+            document.getElementById('question-text').innerText = data.question;
+            
+            // Clear and Add Options
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            data.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.classList.add('option-btn');
+                button.innerText = option;
+                button.onclick = () => handleAnswer(index, button);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function handleAnswer(selectedIndex, button) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            const correctIndex = quizData[currentQuestion].correct;
+            const buttons = document.querySelectorAll('.option-btn');
+
+            if (selectedIndex === correctIndex) {
+                score++;
+                button.classList.add('correct');
+            } else {
+                button.classList.add('wrong');
+                buttons[correctIndex].classList.add('correct');
+            }
+
+            setTimeout(() => {
+                currentQuestion++;
+                if (currentQuestion < quizData.length) {
+                    showQuestion();
+                } else {
+                    showScore();
+                }
+            }, 1500);
+        }
+
+        function showScore() {
+            document.getElementById('question-screen').classList.add('hidden');
+            document.getElementById('score-screen').classList.remove('hidden');
+            document.getElementById('progress').style.width = "100%";
+            
+            document.getElementById('score-text').innerText = `You got ${score} out of ${quizData.length}!`;
+            
+            const verdict = document.getElementById('verdict');
+            const message = document.getElementById('personal-message');
+
+            if (score === quizData.length) {
+                verdict.innerText = "I knew you would Ace this!! 😍";
+                message.innerText = "Let's get Married!";
+            } else if (score >= quizData.length / 2) {
+                verdict.innerText = "I love you so much! ❤️";
+                message.innerText = "Let's get Married!";
+            } else {
+                verdict.innerText = "Who cares about this stupid quiz anyway! 🌹";
+                message.innerText = "Let's get Married!";
+            }
+        }
+
+        function resetQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById('score-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        // --- BACKGROUND HEARTS ---
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart');
+            heart.innerHTML = '❤️';
+            heart.style.left = Math.random() * 100 + "vw";
+            heart.style.fontSize = (Math.random() * 20 + 10) + "px";
+            heart.style.animationDuration = (Math.random() * 3 + 3) + "s";
+            
+            document.getElementById('hearts').appendChild(heart);
+            
+            setTimeout(() => {
+                heart.remove();
+            }, 6000);
+        }
+
+        setInterval(createHeart, 300);
+    </script>
+</body>
+</html>
